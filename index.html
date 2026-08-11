@@ -522,7 +522,7 @@ let config = {
 const STORAGE_KEY = "faw-coord-config-v1"; // respaldo local, por si Sheets no responde
 
 // ---- Google Sheets, patrón CORS-safe (Guía Nuwek: sin headers, POST "simple") ----
-const GS_URL = "https://script.google.com/macros/s/AKfycbxKvgzuh_r-NIBZ_UX3wk8hzbGIMzN1QI3rFXLJrNSX4dm-ELx2jujM3t-r0EN7N4Ok/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbye2lIng-wU_AhGQAEi-GMeWp0vNM9IfL5Uqlf3rBmjtzKAfN6DkV4y90Oqtj-gJPHYXw/exec";
 
 async function gs(action, data){
   const res = await fetch(GS_URL, {
