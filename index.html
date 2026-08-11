@@ -322,6 +322,80 @@
   .pill{ width:7px; height:7px; border-radius:50%; }
   .cal-day.out-of-range{ opacity:0.35; }
 
+  /* ---------- Vista Director — KPIs generales (ejemplo) ---------- */
+  .director-slide{
+    background:#fff;
+    border-bottom: 1px solid var(--line);
+    padding: 40px 16px 46px;
+  }
+  .director-inner{ max-width: 880px; margin:0 auto; }
+  .example-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    background: rgba(242,217,92,0.25);
+    border:1px solid rgba(149,89,30,0.35);
+    color:#7A5A12;
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    padding:4px 10px; border-radius:20px;
+    margin-bottom:14px;
+  }
+  .director-inner h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(22px, 4.5vw, 28px);
+    font-weight:700; margin:0 0 6px; color:var(--ink);
+  }
+  .director-inner .director-sub{
+    font-size:13.5px; color:var(--ink-soft); margin:0 0 24px; max-width:600px;
+  }
+
+  .kpi-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:640px){ .kpi-grid{ grid-template-columns: 1fr; } }
+  .kpi-card{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 16px 14px;
+    background: #FDFDFC;
+  }
+  .kpi-card.wide{ grid-column: 1 / -1; }
+  .kpi-card-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:600;
+    color:var(--ink-soft); margin-bottom:10px;
+  }
+  .kpi-big-row{ display:flex; align-items:baseline; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .kpi-big{ font-family:'Space Grotesk', sans-serif; font-size:34px; font-weight:700; color:var(--ink); }
+  .kpi-target{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft); }
+
+  .progress-track{
+    height:8px; border-radius:6px; background: rgba(22,36,31,0.08); overflow:hidden;
+  }
+  .progress-fill{ height:100%; border-radius:6px; }
+  .kpi-foot{ display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12px; color:var(--ink-soft); }
+
+  .stage-bars{ display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+  .stage-row{ display:flex; align-items:center; gap:10px; }
+  .stage-name{ width:88px; font-size:12px; color:var(--ink-soft); flex-shrink:0; }
+  .stage-track{ flex:1; height:10px; border-radius:6px; background:rgba(22,36,31,0.07); overflow:hidden; }
+  .stage-fill{ height:100%; border-radius:6px; }
+  .stage-val{ width:104px; text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); flex-shrink:0; }
+
+  .trend-row{ display:flex; align-items:flex-end; gap:10px; height:110px; margin-top:6px; }
+  .trend-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px; }
+  .trend-bar{ width:100%; max-width:34px; border-radius:5px 5px 2px 2px; background: var(--p-wbr); }
+  .trend-bar.current{ background: var(--accent); }
+  .trend-pct{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); }
+  .trend-month{ font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+
+  .branch-rank{ display:flex; flex-direction:column; gap:9px; margin-top:4px; }
+  .branch-row{ display:flex; align-items:center; gap:10px; }
+  .branch-pos{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); width:16px; flex-shrink:0; }
+  .branch-name{ width:130px; font-size:12.5px; color:var(--ink); flex-shrink:0; }
+  .branch-track{ flex:1; height:8px; border-radius:6px; background:rgba(22,36,31,0.07); overflow:hidden; }
+  .branch-fill{ height:100%; border-radius:6px; }
+  .branch-pct{ width:44px; text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); flex-shrink:0; }
+
   footer{
     text-align:center; font-size:11.5px; color:var(--ink-soft);
     padding: 10px 16px 30px;
@@ -476,6 +550,87 @@
     </div>
 
     <a href="#plan" class="cover-cta">Ver el plan operativo <span class="arrow">&darr;</span></a>
+  </div>
+</section>
+
+<section class="director-slide" id="director">
+  <div class="director-inner">
+    <div class="example-badge">⚠ Ejemplo ilustrativo — cifras inventadas, no reales</div>
+    <h2>Vista Director &middot; KPIs Generales del Negocio</h2>
+    <p class="director-sub">Así se vería esta vista cuando el dashboard esté conectado a GHL. Los números de abajo son de ejemplo, calibrados con tickets de camión entre $400K y $1.5M MXN &mdash; no representan resultados reales de FAW.</p>
+
+    <div class="kpi-grid">
+
+      <div class="kpi-card">
+        <div class="kpi-card-label">Tasa de cierre global vs meta</div>
+        <div class="kpi-big-row">
+          <span class="kpi-big">3.6%</span>
+          <span class="kpi-target">meta 5.0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:72%; background:var(--accent);"></div></div>
+        <div class="kpi-foot"><span class="dot" style="background:var(--accent)"></span>72% de la meta &middot; en camino</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card-label">Cierres del mes vs meta</div>
+        <div class="kpi-big-row">
+          <span class="kpi-big">25</span>
+          <span class="kpi-target">meta 35&ndash;40</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:66%; background:var(--p-cerradores);"></div></div>
+        <div class="kpi-foot"><span class="dot" style="background:var(--p-cerradores)"></span>66% de la meta &middot; faltan ~10&ndash;15 cierres</div>
+      </div>
+
+      <div class="kpi-card wide">
+        <div class="kpi-card-label">Pipeline value total y por etapa</div>
+        <div class="kpi-big-row">
+          <span class="kpi-big">$226.9M</span>
+          <span class="kpi-target">MXN &middot; 327 oportunidades activas &middot; ticket prom. $694K</span>
+        </div>
+        <div class="stage-bars">
+          <div class="stage-row">
+            <span class="stage-name">Perfilador</span>
+            <div class="stage-track"><div class="stage-fill" style="width:100%; background:var(--p-setters);"></div></div>
+            <span class="stage-val">180 &middot; $116.8M</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-name">Setter</span>
+            <div class="stage-track"><div class="stage-fill" style="width:58%; background:var(--p-wbr);"></div></div>
+            <span class="stage-val">95 &middot; $68.2M</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-name">Asesor</span>
+            <div class="stage-track"><div class="stage-fill" style="width:36%; background:var(--p-cerradores);"></div></div>
+            <span class="stage-val">52 &middot; $41.9M</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-card wide">
+        <div class="kpi-card-label">Comparativo mes vs mes &middot; tasa de cierre</div>
+        <div class="trend-row">
+          <div class="trend-col"><span class="trend-pct">1.4%</span><div class="trend-bar" style="height:22%;"></div><span class="trend-month">Abr</span></div>
+          <div class="trend-col"><span class="trend-pct">1.9%</span><div class="trend-bar" style="height:32%;"></div><span class="trend-month">May</span></div>
+          <div class="trend-col"><span class="trend-pct">2.6%</span><div class="trend-bar" style="height:47%;"></div><span class="trend-month">Jun</span></div>
+          <div class="trend-col"><span class="trend-pct">3.1%</span><div class="trend-bar" style="height:60%;"></div><span class="trend-month">Jul</span></div>
+          <div class="trend-col"><span class="trend-pct">3.6%</span><div class="trend-bar current" style="height:72%;"></div><span class="trend-month">Ago*</span></div>
+        </div>
+      </div>
+
+      <div class="kpi-card wide">
+        <div class="kpi-card-label">Ranking de sucursales &middot; tasa de cierre</div>
+        <div class="branch-rank">
+          <div class="branch-row"><span class="branch-pos">01</span><span class="branch-name">Querétaro</span><div class="branch-track"><div class="branch-fill" style="width:100%; background:var(--p-setters);"></div></div><span class="branch-pct">5.1%</span></div>
+          <div class="branch-row"><span class="branch-pos">02</span><span class="branch-name">Monterrey</span><div class="branch-track"><div class="branch-fill" style="width:90%; background:var(--p-setters);"></div></div><span class="branch-pct">4.6%</span></div>
+          <div class="branch-row"><span class="branch-pos">03</span><span class="branch-name">Guadalajara</span><div class="branch-track"><div class="branch-fill" style="width:78%; background:var(--accent);"></div></div><span class="branch-pct">4.0%</span></div>
+          <div class="branch-row"><span class="branch-pos">04</span><span class="branch-name">CDMX Poniente</span><div class="branch-track"><div class="branch-fill" style="width:71%; background:var(--accent);"></div></div><span class="branch-pct">3.6%</span></div>
+          <div class="branch-row"><span class="branch-pos">05</span><span class="branch-name">Puebla</span><div class="branch-track"><div class="branch-fill" style="width:61%; background:var(--p-cerradores);"></div></div><span class="branch-pct">3.1%</span></div>
+          <div class="branch-row"><span class="branch-pos">06</span><span class="branch-name">Tijuana</span><div class="branch-track"><div class="branch-fill" style="width:47%; background:#B0453B;"></div></div><span class="branch-pct">2.4%</span></div>
+          <div class="branch-row"><span class="branch-pos">07</span><span class="branch-name">Mérida</span><div class="branch-track"><div class="branch-fill" style="width:31%; background:#B0453B;"></div></div><span class="branch-pct">1.6%</span></div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </section>
 
