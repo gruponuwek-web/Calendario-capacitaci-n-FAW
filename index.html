@@ -99,6 +99,7 @@
   }
   .sync-status.err{ color:#B0453B; }
   .sync-status.ok{ color:var(--p-setters); }
+  .sync-actions{ display:flex; gap:8px; flex-wrap:wrap; }
   .sync-btn{
     border:1px solid var(--line);
     background:#fafaf9;
@@ -109,6 +110,17 @@
     border-radius:6px;
   }
   .sync-btn:hover{ background:rgba(34,60,54,0.06); }
+  .sync-btn.save{ opacity:0.45; cursor:default; }
+  .sync-btn.save.dirty{
+    opacity:1; cursor:pointer;
+    background:var(--accent); color:#3a3110; border-color:var(--accent);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(242,217,92,0.55); }
+    50%{ box-shadow:0 0 0 5px rgba(242,217,92,0); }
+  }
+  @media (prefers-reduced-motion: reduce){ .sync-btn.save.dirty{ animation:none; } }
   .panel-title{
     font-family:'Space Grotesk', sans-serif;
     font-weight:600;
@@ -257,6 +269,29 @@
   .event .dot{ width:8px; height:8px; }
   .event .ev-label{ flex:1; }
   .event .ev-time{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); }
+  .event .ev-adjusted{
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;
+    color:#95591E; background:rgba(234,155,75,0.15); padding:1px 6px; border-radius:20px;
+  }
+  .event .edit-btn{
+    border:none; background:transparent; color:var(--ink-soft); font-size:13px; padding:2px 4px; line-height:1; flex-shrink:0;
+  }
+  .event .edit-btn:hover{ color:var(--primary); }
+  .event-editor{
+    display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+    background:#fafaf9; border:1px dashed var(--line); border-radius:6px;
+    padding:8px; margin:2px 0 4px 17px;
+    font-size:12px;
+  }
+  .event-editor input[type=date], .event-editor input[type=time]{
+    padding:5px 6px; border:1px solid var(--line); border-radius:5px; font-size:12px; background:#fff; color:var(--ink);
+  }
+  .event-editor button{
+    border:none; border-radius:5px; padding:5px 9px; font-size:11.5px; font-weight:600;
+  }
+  .event-editor .ee-save{ background:var(--primary); color:#fff; }
+  .event-editor .ee-clear{ background:transparent; color:#B0453B; }
+  .event-editor .ee-cancel{ background:transparent; color:var(--ink-soft); }
   .coach-group{ padding-left:17px; display:flex; flex-direction:column; gap:5px; }
   .coach-group .event{ font-size:12.5px; color:var(--ink-soft); }
 
@@ -455,10 +490,13 @@
   <div class="panel">
     <div class="sync-row">
       <span id="sync-status" class="sync-status">Cargando desde Google Sheets…</span>
-      <button id="sync-refresh" class="sync-btn">↻ Actualizar desde Sheets</button>
+      <div class="sync-actions">
+        <button id="sync-refresh" class="sync-btn">↻ Actualizar desde Sheets</button>
+        <button id="sync-save" class="sync-btn save">Guardar cambios</button>
+      </div>
     </div>
     <p class="panel-title"><span class="dot" style="background:var(--primary)"></span>Configuración de horarios</p>
-    <p class="panel-sub">Define el día y hora fija de cada ritual. Se guarda automáticamente en el Sheet compartido — cualquiera que abra este portal ve lo mismo.</p>
+    <p class="panel-sub">Define el día y hora fija de cada ritual. Los cambios quedan localmente al instante — presiona "Guardar cambios" para subirlos al Sheet compartido.</p>
 
     <div class="config-grid">
       <div class="field-group">
@@ -516,8 +554,10 @@ let config = {
     { name: "Setter 1", day: 4, time: "16:00" },
     { name: "Setter 2", day: 4, time: "17:00" },
     { name: "Setter 3", day: 5, time: "10:00" }
-  ]
+  ],
+  overrides: {} // ej: { "wbr-2": {date:"2026-08-24", time:"10:00"} } — mueve UNA sesión sin tocar la regla
 };
+let isDirty = false;
 
 const STORAGE_KEY = "faw-coord-config-v1"; // respaldo local, por si Sheets no responde
 
@@ -551,6 +591,7 @@ async function loadLocalFallback(){
       if(parsed && parsed.setters) config = parsed;
     }
   }catch(e){ /* no hay respaldo local todavía */ }
+  config.overrides = config.overrides || {};
 }
 
 async function loadConfig(){
@@ -559,8 +600,10 @@ async function loadConfig(){
     const out = await gs('getCoordinacionConfig', {});
     if(out && out.ok && out.config && out.config.setters){
       config = out.config;
+      config.overrides = config.overrides || {};
       setSyncStatus("Sincronizado con Google Sheets", "ok");
       cacheLocal();
+      isDirty = false; updateSaveBtn();
       return;
     }
     // primera vez: no hay nada guardado en el Sheet todavía, subimos el default
@@ -585,13 +628,25 @@ async function saveConfig(){
     const out = await gs('saveCoordinacionConfig', { config });
     if(out && out.ok){
       setSyncStatus("Guardado en Google Sheets ✓", "ok");
+      isDirty = false; updateSaveBtn();
     }else{
       throw new Error(out && out.error ? out.error : 'Respuesta inesperada');
     }
   }catch(e){
     console.error("No se pudo guardar en Sheets:", e);
-    setSyncStatus("No se pudo guardar en Sheets — quedó en respaldo local", "err");
+    setSyncStatus("No se pudo guardar en Sheets — reintenta con \"Guardar cambios\"", "err");
   }
+}
+
+function markDirty(){
+  isDirty = true;
+  updateSaveBtn();
+  setSyncStatus("Cambios sin guardar — presiona \"Guardar cambios\"", "err");
+}
+function updateSaveBtn(){
+  const btn = document.getElementById('sync-save');
+  if(!btn) return;
+  btn.classList.toggle('dirty', isDirty);
 }
 
 function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
@@ -614,6 +669,19 @@ function fmtRange(weekIndex){
   return fmtDate(start) + " – " + fmtDate(end);
 }
 
+function effective(key, defaultDate, defaultTime){
+  const o = config.overrides && config.overrides[key];
+  if(o && o.date){
+    const [y,m,d] = o.date.split('-').map(Number);
+    return { date: new Date(y, m-1, d), time: o.time || defaultTime, overridden:true, key };
+  }
+  return { date: defaultDate, time: defaultTime, overridden:false, key };
+}
+function toISODateInput(d){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 function buildWeekData(weekIndex){
   const isSetterPhase = weekIndex < 6;
   const phase = isSetterPhase ? 'setters' : 'cerradores';
@@ -622,16 +690,16 @@ function buildWeekData(weekIndex){
     : `Cerradores — Sesión ${weekIndex-6+1} / 3`;
   const wbrParticipants = isSetterPhase ? "Setters" : "Setters + Cerradores";
 
-  const wbrDate = dateForWeekday(weekIndex, config.wbr.day);
-  const trainingDate = dateForWeekday(weekIndex, config.training.day);
+  const wbr = effective(`wbr-${weekIndex}`, dateForWeekday(weekIndex, config.wbr.day), config.wbr.time);
+  const training = effective(`training-${weekIndex}`, dateForWeekday(weekIndex, config.training.day), config.training.time);
 
-  const coaching = config.setters.map(s => ({
-    name: s.name || "Sin nombre",
-    date: dateForWeekday(weekIndex, s.day),
-    time: s.time
-  }));
+  const coaching = config.setters.map((s, idx) => {
+    const key = `coach-${weekIndex}-${idx}`;
+    const ev = effective(key, dateForWeekday(weekIndex, s.day), s.time);
+    return { name: s.name || "Sin nombre", ...ev };
+  });
 
-  return { weekIndex, phase, trainingLabel, wbrParticipants, wbrDate, trainingDate, coaching };
+  return { weekIndex, phase, trainingLabel, wbrParticipants, wbr, training, coaching };
 }
 
 /* ---------- Config panel rendering ---------- */
@@ -701,12 +769,15 @@ document.getElementById('add-setter').onclick = () => {
 };
 
 function onConfigChange(){
-  saveConfig();
+  cacheLocal();
+  markDirty();
   renderListView();
   renderCalendarView();
 }
 
 /* ---------- List view ---------- */
+let openEditorKey = null; // qué sesión tiene el editor abierto ahora mismo
+
 function renderListView(){
   const container = document.getElementById('view-list');
   container.innerHTML = "";
@@ -718,36 +789,96 @@ function renderListView(){
     const badgeClass = w.phase === 'cerradores' ? 'phase-badge cerradores' : 'phase-badge';
     const badgeText = w.phase === 'cerradores' ? 'Cerradores' : 'Setters';
 
-    let coachHtml = w.coaching.map(c => `
-      <div class="event">
-        <span class="dot" style="background:var(--accent)"></span>
-        <span class="ev-label">${escapeHtml(c.name)} — 1-1</span>
-        <span class="ev-time">${fmtDate(c.date)} · ${c.time}</span>
-      </div>
-    `).join('');
-
-    card.innerHTML = `
+    const head = document.createElement('div');
+    head.innerHTML = `
       <div class="week-num">${String(i+1).padStart(2,'0')}</div>
       <div class="week-header">
         <span class="week-range">${fmtRange(i)}</span>
         <span class="${badgeClass}">${badgeText}</span>
       </div>
-      <div class="events">
-        <div class="event">
-          <span class="dot" style="background:var(--p-wbr)"></span>
-          <span class="ev-label">WBR — ${w.wbrParticipants}</span>
-          <span class="ev-time">${fmtDate(w.wbrDate)} · ${config.wbr.time}</span>
-        </div>
-        <div class="event">
-          <span class="dot" style="background:${w.phase === 'cerradores' ? 'var(--p-cerradores)' : 'var(--p-setters)'}"></span>
-          <span class="ev-label">${w.trainingLabel}</span>
-          <span class="ev-time">${fmtDate(w.trainingDate)} · ${config.training.time}</span>
-        </div>
-        <div class="coach-group">${coachHtml}</div>
-      </div>
     `;
+    while(head.firstChild) card.appendChild(head.firstChild);
+
+    const eventsWrap = document.createElement('div');
+    eventsWrap.className = 'events';
+
+    eventsWrap.appendChild(buildEventRow({
+      key: w.wbr.key, color: 'var(--p-wbr)',
+      label: `WBR — ${w.wbrParticipants}`, ev: w.wbr
+    }));
+    eventsWrap.appendChild(buildEventRow({
+      key: w.training.key,
+      color: w.phase === 'cerradores' ? 'var(--p-cerradores)' : 'var(--p-setters)',
+      label: w.trainingLabel, ev: w.training
+    }));
+
+    const coachGroup = document.createElement('div');
+    coachGroup.className = 'coach-group';
+    w.coaching.forEach(c=>{
+      coachGroup.appendChild(buildEventRow({
+        key: c.key, color: 'var(--accent)',
+        label: `${c.name} — 1-1`, ev: c, small: true
+      }));
+    });
+    eventsWrap.appendChild(coachGroup);
+
+    card.appendChild(eventsWrap);
     container.appendChild(card);
   }
+}
+
+// Construye una fila de evento con su lápiz de edición y, si está abierto,
+// el editor inline debajo (fecha/hora puntual, sin tocar la regla general).
+function buildEventRow({ key, color, label, ev }){
+  const wrap = document.createElement('div');
+
+  const row = document.createElement('div');
+  row.className = 'event';
+  row.innerHTML = `
+    <span class="dot" style="background:${color}"></span>
+    <span class="ev-label">${escapeHtml(label)}</span>
+    ${ev.overridden ? '<span class="ev-adjusted">Ajustado</span>' : ''}
+    <span class="ev-time">${fmtDate(ev.date)} · ${ev.time}</span>
+    <button class="edit-btn" type="button" aria-label="Editar esta sesión">✎</button>
+  `;
+  row.querySelector('.edit-btn').onclick = () => {
+    openEditorKey = (openEditorKey === key) ? null : key;
+    renderListView();
+  };
+  wrap.appendChild(row);
+
+  if(openEditorKey === key){
+    const editor = document.createElement('div');
+    editor.className = 'event-editor';
+    editor.innerHTML = `
+      <input type="date" class="ee-date" value="${toISODateInput(ev.date)}">
+      <input type="time" class="ee-time" value="${ev.time}">
+      <button type="button" class="ee-save">Guardar esta sesión</button>
+      ${ev.overridden ? '<button type="button" class="ee-clear">Quitar ajuste</button>' : ''}
+      <button type="button" class="ee-cancel">Cancelar</button>
+    `;
+    editor.querySelector('.ee-save').onclick = () => {
+      const dateVal = editor.querySelector('.ee-date').value;
+      const timeVal = editor.querySelector('.ee-time').value;
+      if(!dateVal || !timeVal) return;
+      config.overrides[key] = { date: dateVal, time: timeVal };
+      openEditorKey = null;
+      onConfigChange();
+    };
+    const clearBtn = editor.querySelector('.ee-clear');
+    if(clearBtn) clearBtn.onclick = () => {
+      delete config.overrides[key];
+      openEditorKey = null;
+      onConfigChange();
+    };
+    editor.querySelector('.ee-cancel').onclick = () => {
+      openEditorKey = null;
+      renderListView();
+    };
+    wrap.appendChild(editor);
+  }
+
+  return wrap;
 }
 
 function escapeHtml(str){
@@ -770,8 +901,8 @@ function renderCalendarView(){
   }
   for(let i=0;i<N_WEEKS;i++){
     const w = buildWeekData(i);
-    addEvent(w.wbrDate, 'var(--p-wbr)');
-    addEvent(w.trainingDate, w.phase === 'cerradores' ? 'var(--p-cerradores)' : 'var(--p-setters)');
+    addEvent(w.wbr.date, 'var(--p-wbr)');
+    addEvent(w.training.date, w.phase === 'cerradores' ? 'var(--p-cerradores)' : 'var(--p-setters)');
     w.coaching.forEach(c => addEvent(c.date, 'var(--accent)'));
   }
 
@@ -845,15 +976,21 @@ document.getElementById('btn-cal').onclick = () => {
 };
 
 document.getElementById('sync-refresh').onclick = async () => {
+  if(isDirty && !confirm('Tienes cambios sin guardar que se perderían al actualizar desde Sheets. ¿Continuar de todos modos?')) return;
   await loadConfig();
   renderConfigPanel();
   renderListView();
   renderCalendarView();
 };
+document.getElementById('sync-save').onclick = () => {
+  if(!isDirty) return;
+  saveConfig();
+};
 
 /* ---------- Init ---------- */
 (async function init(){
   await loadConfig();
+  updateSaveBtn();
   renderConfigPanel();
   renderListView();
   renderCalendarView();
