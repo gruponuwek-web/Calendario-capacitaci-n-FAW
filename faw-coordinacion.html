@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAW · Panel de Coordinación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F1F3F1;
+    --panel: #FFFFFF;
+    --ink: #16241F;
+    --ink-soft: #4E5D57;
+    --line: rgba(22,36,31,0.12);
+    --primary: #223c36;
+    --accent: #f2d95c;
+    --p-setters: #2E8B7E;
+    --p-wbr: #00A0B0;
+    --p-cerradores: #EA9B4B;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .display{ font-family:'Space Grotesk', sans-serif; }
+
+  a{ color:inherit; }
+  button{ font-family:inherit; cursor:pointer; }
+  select, input[type=time], input[type=text]{ font-family:inherit; }
+
+  /* Header — control tower band */
+  header{
+    background: linear-gradient(135deg, var(--primary) 0%, #1a302b 100%);
+    color:#fff;
+    padding: 28px 20px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute; right:-40px; top:-60px;
+    width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, rgba(242,217,92,0.16) 0%, transparent 70%);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color: var(--accent);
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(22px, 5vw, 30px);
+    margin:0 0 6px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color: rgba(255,255,255,0.72);
+    font-size:14px;
+    max-width:520px;
+  }
+
+  main{
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 18px 16px 60px;
+  }
+
+  /* Config panel */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 16px;
+    margin-bottom:18px;
+  }
+  .sync-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .sync-status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .sync-status.err{ color:#B0453B; }
+  .sync-status.ok{ color:var(--p-setters); }
+  .sync-btn{
+    border:1px solid var(--line);
+    background:#fafaf9;
+    color:var(--primary);
+    font-size:11.5px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:6px;
+  }
+  .sync-btn:hover{ background:rgba(34,60,54,0.06); }
+  .panel-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    margin:0 0 4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+
+  .config-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px 16px;
+    margin-bottom: 14px;
+  }
+  @media (max-width:560px){ .config-grid{ grid-template-columns: 1fr; } }
+
+  .field-group{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 12px 10px;
+  }
+  .field-group-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-bottom:8px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .field-row{ display:flex; gap:8px; }
+  .field-row select, .field-row input[type=time]{
+    flex:1;
+    padding:7px 8px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+    background:#fafaf9;
+    color:var(--ink);
+  }
+  select:focus, input:focus{ outline:2px solid var(--primary); outline-offset:1px; }
+
+  .setters-list{ display:flex; flex-direction:column; gap:10px; }
+  .setter-row{
+    display:grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap:6px;
+    align-items:center;
+  }
+  .setter-row input[type=text]{
+    padding:7px 8px; border:1px solid var(--line); border-radius:6px; font-size:13px; background:#fafaf9; color:var(--ink); width:100%;
+  }
+  .setter-row select, .setter-row input[type=time]{
+    padding:7px 6px; border:1px solid var(--line); border-radius:6px; font-size:12.5px; background:#fafaf9; color:var(--ink);
+  }
+  .remove-btn{
+    border:none; background:transparent; color:#B0453B; font-size:16px; line-height:1; padding:4px 6px;
+  }
+  .add-setter{
+    margin-top:10px;
+    border:1px dashed var(--line);
+    background:transparent;
+    color:var(--primary);
+    font-size:12.5px;
+    font-weight:600;
+    padding:8px;
+    border-radius:6px;
+    width:100%;
+  }
+  .add-setter:hover{ background:rgba(34,60,54,0.04); }
+
+  /* View toggle */
+  .toggle{
+    display:inline-flex;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:3px;
+    margin-bottom:16px;
+  }
+  .toggle button{
+    border:none; background:transparent;
+    padding:7px 16px;
+    font-size:13px; font-weight:600;
+    border-radius:6px;
+    color:var(--ink-soft);
+  }
+  .toggle button.active{
+    background:var(--primary);
+    color:#fff;
+  }
+
+  /* Legend */
+  .legend{
+    display:flex; flex-wrap:wrap; gap:14px;
+    font-size:12px; color:var(--ink-soft);
+    margin-bottom:18px;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+
+  /* List view — manifest style */
+  .week-line{ position:relative; }
+  .week-card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 14px 14px 54px;
+    margin-bottom:10px;
+  }
+  .week-num{
+    position:absolute; left:14px; top:14px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:#fff;
+    background:var(--primary);
+    width:26px; height:26px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:600;
+  }
+  .week-card.phase-cerradores .week-num{ background:var(--p-cerradores); }
+  .week-header{
+    display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px;
+    margin-bottom:10px;
+  }
+  .week-range{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); }
+  .phase-badge{
+    font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+    padding:2px 8px; border-radius:20px;
+    background: rgba(46,139,126,0.12); color: var(--p-setters);
+  }
+  .phase-badge.cerradores{ background: rgba(234,155,75,0.15); color:#95591E; }
+
+  .events{ display:flex; flex-direction:column; gap:7px; }
+  .event{
+    display:flex; align-items:center; gap:9px;
+    font-size:13px;
+  }
+  .event .dot{ width:8px; height:8px; }
+  .event .ev-label{ flex:1; }
+  .event .ev-time{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); }
+  .coach-group{ padding-left:17px; display:flex; flex-direction:column; gap:5px; }
+  .coach-group .event{ font-size:12.5px; color:var(--ink-soft); }
+
+  /* Calendar view */
+  .month{ margin-bottom:22px; }
+  .month-title{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; margin:0 0 10px;
+  }
+  .cal-grid{
+    display:grid; grid-template-columns: repeat(7, 1fr);
+    gap:4px;
+  }
+  .cal-dow{
+    font-size:10px; text-transform:uppercase; color:var(--ink-soft); text-align:center; padding-bottom:4px; letter-spacing:.05em;
+  }
+  .cal-day{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    min-height:56px;
+    padding:4px;
+    font-size:11px;
+    position:relative;
+  }
+  .cal-day.empty{ background:transparent; border:none; }
+  .cal-day .daynum{ font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); font-size:10.5px; }
+  .cal-day .pills{ display:flex; flex-wrap:wrap; gap:2px; margin-top:3px; }
+  .pill{ width:7px; height:7px; border-radius:50%; }
+  .cal-day.out-of-range{ opacity:0.35; }
+
+  footer{
+    text-align:center; font-size:11.5px; color:var(--ink-soft);
+    padding: 10px 16px 30px;
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .week-card, .panel{ animation: rise .35s ease both; }
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  /* ---------- Portada / Cover slide ---------- */
+  .cover{
+    background: linear-gradient(160deg, #16241F 0%, var(--primary) 55%, #1a332d 100%);
+    color:#fff;
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    padding: 60px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .cover::before{
+    content:"";
+    position:absolute; left:-120px; bottom:-140px;
+    width:380px; height:380px; border-radius:50%;
+    background: radial-gradient(circle, rgba(0,160,176,0.16) 0%, transparent 70%);
+  }
+  .cover::after{
+    content:"";
+    position:absolute; right:-100px; top:-100px;
+    width:320px; height:320px; border-radius:50%;
+    background: radial-gradient(circle, rgba(242,217,92,0.14) 0%, transparent 70%);
+  }
+  .cover-inner{
+    max-width: 760px;
+    margin: 0 auto;
+    position:relative;
+    z-index:1;
+  }
+  .cover .eyebrow{ color: var(--accent); font-size:12px; }
+  .cover h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight:700;
+    line-height:1.08;
+    letter-spacing:-0.015em;
+    margin: 6px 0 10px;
+  }
+  .cover .cover-subtitle{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: clamp(13px, 2vw, 15px);
+    color: rgba(255,255,255,0.68);
+    margin: 0 0 34px;
+    letter-spacing:0.01em;
+  }
+
+  .stat-bar{
+    display:flex;
+    width:100%;
+    height:14px;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .stat-seg{ height:100%; }
+  .stat-labels{
+    display:flex;
+    margin-bottom:36px;
+  }
+  .stat-label{ display:flex; flex-direction:column; gap:2px; }
+  .stat-label .pct{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(20px, 3.4vw, 26px);
+    font-weight:700;
+    line-height:1;
+  }
+  .stat-label .lbl{
+    font-size:11.5px;
+    color: rgba(255,255,255,0.62);
+    margin-top:4px;
+  }
+
+  .cover-body p{
+    font-size: clamp(14.5px, 2.1vw, 16px);
+    line-height:1.65;
+    color: rgba(255,255,255,0.86);
+    margin: 0 0 16px;
+    max-width: 640px;
+  }
+  .cover-body strong{ color:#fff; }
+  .cover-body .highlight{
+    color: var(--accent);
+    font-weight:600;
+  }
+
+  .cover-cta{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-top: 20px;
+    padding: 11px 20px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.28);
+    color:#fff;
+    text-decoration:none;
+    font-size:13px;
+    font-weight:600;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .cover-cta:hover{ background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.5); }
+  .cover-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .cover-cta .arrow{ font-family:'IBM Plex Mono', monospace; }
+
+  @media (max-width:520px){
+    .cover{ padding: 44px 18px; min-height: auto; }
+    .stat-labels{ flex-wrap:wrap; row-gap:14px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="cover-inner">
+    <div class="eyebrow">EVA+ &middot; FAW &middot; Fase de Sostenimiento</div>
+    <h2>De la Capacitación<br>a la Disciplina</h2>
+    <p class="cover-subtitle">El modelo 70&ndash;20&ndash;10 aplicado a la transformación comercial</p>
+
+    <div class="stat-bar">
+      <div class="stat-seg" style="width:70%; background:var(--p-wbr);"></div>
+      <div class="stat-seg" style="width:20%; background:var(--accent);"></div>
+      <div class="stat-seg" style="width:10%; background:var(--p-setters);"></div>
+    </div>
+    <div class="stat-labels">
+      <div class="stat-label" style="flex:7;">
+        <span class="pct" style="color:var(--p-wbr);">70%</span>
+        <span class="lbl">Experiencia en el terreno &middot; sostenida por el WBR</span>
+      </div>
+      <div class="stat-label" style="flex:2;">
+        <span class="pct" style="color:var(--accent);">20%</span>
+        <span class="lbl">Coaching 1-1 &middot; marca personal</span>
+      </div>
+      <div class="stat-label" style="flex:1;">
+        <span class="pct" style="color:var(--p-setters);">10%</span>
+        <span class="lbl">Formación formal &middot; capacitación semanal</span>
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <p>El aprendizaje real no ocurre en el salón &mdash; ocurre en la práctica. El modelo <strong>70&ndash;20&ndash;10</strong> (Lombardo &amp; Eichinger) establece que la mayor parte del desarrollo de una persona viene de la <strong>experiencia directa</strong>, una porción menor del <strong>coaching y la retroalimentación</strong> de un mentor, y solo una fracción de la <strong>formación formal</strong>.</p>
+      <p>El evento de dos días activó ese <span class="highlight">10%</span>. Sin el 70% y el 20% que le siguen, ese conocimiento se diluye en semanas &mdash; es la curva del olvido operando en contra del proyecto.</p>
+      <p>Por eso el plan no termina en el evento: el <strong>WBR</strong> sostiene la rendición de cuentas semana a semana, el <strong>coacheo 1-1</strong> entrega retroalimentación personalizada, y la <strong>capacitación semanal</strong> refuerza el conocimiento de forma espaciada &mdash; no todo de un jalón.</p>
+    </div>
+
+    <a href="#plan" class="cover-cta">Ver el plan operativo <span class="arrow">&darr;</span></a>
+  </div>
+</section>
+
+<header id="plan">
+  <div class="eyebrow">EVA+ &middot; FAW &middot; Coordinación Operativa</div>
+  <h1>Panel de Coordinación</h1>
+  <p>WBR, capacitación de venta y coacheo 1-1 &mdash; 9 semanas, Setters &rarr; Cerradores. Ajusta los horarios y el plan se recalcula solo.</p>
+</header>
+
+<main>
+
+  <div class="panel">
+    <div class="sync-row">
+      <span id="sync-status" class="sync-status">Cargando desde Google Sheets…</span>
+      <button id="sync-refresh" class="sync-btn">↻ Actualizar desde Sheets</button>
+    </div>
+    <p class="panel-title"><span class="dot" style="background:var(--primary)"></span>Configuración de horarios</p>
+    <p class="panel-sub">Define el día y hora fija de cada ritual. Se guarda automáticamente en el Sheet compartido — cualquiera que abra este portal ve lo mismo.</p>
+
+    <div class="config-grid">
+      <div class="field-group">
+        <div class="field-group-label"><span class="dot" style="background:var(--p-wbr)"></span>WBR</div>
+        <div class="field-row">
+          <select id="wbr-day"></select>
+          <input type="time" id="wbr-time" value="09:00">
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-group-label"><span class="dot" style="background:var(--p-setters)"></span>Sesión de capacitación</div>
+        <div class="field-row">
+          <select id="training-day"></select>
+          <input type="time" id="training-time" value="16:00">
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-label"><span class="dot" style="background:var(--accent)"></span>Coacheo 1-1 &middot; marca personal (por Setter)</div>
+      <div class="setters-list" id="setters-list"></div>
+      <button class="add-setter" id="add-setter">+ Agregar setter / vendedor</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--p-wbr)"></span>WBR</span>
+    <span><span class="dot" style="background:var(--p-setters)"></span>Capacitación Setters</span>
+    <span><span class="dot" style="background:var(--p-cerradores)"></span>Capacitación Cerradores</span>
+    <span><span class="dot" style="background:var(--accent)"></span>Coacheo 1-1</span>
+  </div>
+
+  <div class="toggle">
+    <button id="btn-list" class="active">Lista</button>
+    <button id="btn-cal">Calendario</button>
+  </div>
+
+  <div id="view-list"></div>
+  <div id="view-cal" style="display:none;"></div>
+
+</main>
+
+<footer>Grupo Nuwek &middot; EVA+ &middot; Proyecto FAW &mdash; horarios editables, se guardan en este dispositivo</footer>
+
+<script>
+const WEEK_START = new Date(2026, 7, 11); // martes 11 ago 2026
+const N_WEEKS = 9;
+const DOW_LABELS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const DOW_SHORT = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+
+let config = {
+  wbr: { day: 1, time: "09:00" },       // Lunes
+  training: { day: 2, time: "16:00" },  // Martes
+  setters: [
+    { name: "Setter 1", day: 4, time: "16:00" },
+    { name: "Setter 2", day: 4, time: "17:00" },
+    { name: "Setter 3", day: 5, time: "10:00" }
+  ]
+};
+
+const STORAGE_KEY = "faw-coord-config-v1"; // respaldo local, por si Sheets no responde
+
+// ---- Google Sheets, patrón CORS-safe (Guía Nuwek: sin headers, POST "simple") ----
+const GS_URL = "https://script.google.com/macros/s/AKfycbxKvgzuh_r-NIBZ_UX3wk8hzbGIMzN1QI3rFXLJrNSX4dm-ELx2jujM3t-r0EN7N4Ok/exec";
+
+async function gs(action, data){
+  const res = await fetch(GS_URL, {
+    method: 'POST',
+    body: new URLSearchParams({ action, data: JSON.stringify(data || {}) })
+    // SIN objeto headers a propósito — evita el preflight (ver guía CORS)
+  });
+  return res.json();
+}
+
+function setSyncStatus(text, kind){
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'sync-status' + (kind ? ' ' + kind : '');
+}
+
+function cacheLocal(){
+  try{ window.storage && window.storage.set(STORAGE_KEY, JSON.stringify(config)); }catch(e){ /* no-op */ }
+}
+async function loadLocalFallback(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      if(parsed && parsed.setters) config = parsed;
+    }
+  }catch(e){ /* no hay respaldo local todavía */ }
+}
+
+async function loadConfig(){
+  setSyncStatus("Cargando desde Google Sheets…");
+  try{
+    const out = await gs('getCoordinacionConfig', {});
+    if(out && out.ok && out.config && out.config.setters){
+      config = out.config;
+      setSyncStatus("Sincronizado con Google Sheets", "ok");
+      cacheLocal();
+      return;
+    }
+    // primera vez: no hay nada guardado en el Sheet todavía, subimos el default
+    if(out && out.ok){
+      await gs('saveCoordinacionConfig', { config });
+      setSyncStatus("Sincronizado con Google Sheets (config inicial creada)", "ok");
+      cacheLocal();
+      return;
+    }
+    throw new Error(out && out.error ? out.error : 'Respuesta inesperada');
+  }catch(e){
+    console.error("No se pudo cargar de Sheets:", e);
+    await loadLocalFallback();
+    setSyncStatus("Sin conexión a Sheets — usando respaldo local", "err");
+  }
+}
+
+async function saveConfig(){
+  cacheLocal(); // respaldo inmediato, por si se pierde la conexión a medio guardado
+  setSyncStatus("Guardando en Google Sheets…");
+  try{
+    const out = await gs('saveCoordinacionConfig', { config });
+    if(out && out.ok){
+      setSyncStatus("Guardado en Google Sheets ✓", "ok");
+    }else{
+      throw new Error(out && out.error ? out.error : 'Respuesta inesperada');
+    }
+  }catch(e){
+    console.error("No se pudo guardar en Sheets:", e);
+    setSyncStatus("No se pudo guardar en Sheets — quedó en respaldo local", "err");
+  }
+}
+
+function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+
+function dateForWeekday(weekIndex, weekday){
+  const weekStart = addDays(WEEK_START, weekIndex*7);
+  for(let off=0; off<7; off++){
+    const d = addDays(weekStart, off);
+    if(d.getDay() === Number(weekday)) return d;
+  }
+  return weekStart;
+}
+
+function fmtDate(d){
+  return d.toLocaleDateString('es-MX', { weekday:'short', day:'numeric', month:'short' }).replace('.','');
+}
+function fmtRange(weekIndex){
+  const start = addDays(WEEK_START, weekIndex*7);
+  const end = addDays(start, 6);
+  return fmtDate(start) + " – " + fmtDate(end);
+}
+
+function buildWeekData(weekIndex){
+  const isSetterPhase = weekIndex < 6;
+  const phase = isSetterPhase ? 'setters' : 'cerradores';
+  const trainingLabel = isSetterPhase
+    ? `Setters — Sesión ${weekIndex+1} / 6`
+    : `Cerradores — Sesión ${weekIndex-6+1} / 3`;
+  const wbrParticipants = isSetterPhase ? "Setters" : "Setters + Cerradores";
+
+  const wbrDate = dateForWeekday(weekIndex, config.wbr.day);
+  const trainingDate = dateForWeekday(weekIndex, config.training.day);
+
+  const coaching = config.setters.map(s => ({
+    name: s.name || "Sin nombre",
+    date: dateForWeekday(weekIndex, s.day),
+    time: s.time
+  }));
+
+  return { weekIndex, phase, trainingLabel, wbrParticipants, wbrDate, trainingDate, coaching };
+}
+
+/* ---------- Config panel rendering ---------- */
+function populateDaySelect(select, selectedVal){
+  select.innerHTML = "";
+  [1,2,3,4,5,6,0].forEach(dow=>{
+    const opt = document.createElement('option');
+    opt.value = dow;
+    opt.textContent = DOW_LABELS[dow];
+    if(Number(selectedVal) === dow) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+function renderConfigPanel(){
+  const wbrDaySel = document.getElementById('wbr-day');
+  const trainingDaySel = document.getElementById('training-day');
+  populateDaySelect(wbrDaySel, config.wbr.day);
+  populateDaySelect(trainingDaySel, config.training.day);
+  document.getElementById('wbr-time').value = config.wbr.time;
+  document.getElementById('training-time').value = config.training.time;
+
+  wbrDaySel.onchange = e => { config.wbr.day = Number(e.target.value); onConfigChange(); };
+  document.getElementById('wbr-time').onchange = e => { config.wbr.time = e.target.value; onConfigChange(); };
+  trainingDaySel.onchange = e => { config.training.day = Number(e.target.value); onConfigChange(); };
+  document.getElementById('training-time').onchange = e => { config.training.time = e.target.value; onConfigChange(); };
+
+  const list = document.getElementById('setters-list');
+  list.innerHTML = "";
+  config.setters.forEach((s, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'setter-row';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = s.name;
+    nameInput.placeholder = 'Nombre';
+    nameInput.onchange = e => { config.setters[idx].name = e.target.value; onConfigChange(); };
+
+    const daySel = document.createElement('select');
+    populateDaySelect(daySel, s.day);
+    daySel.onchange = e => { config.setters[idx].day = Number(e.target.value); onConfigChange(); };
+
+    const timeInput = document.createElement('input');
+    timeInput.type = 'time';
+    timeInput.value = s.time;
+    timeInput.onchange = e => { config.setters[idx].time = e.target.value; onConfigChange(); };
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.setAttribute('aria-label', 'Quitar');
+    removeBtn.onclick = () => { config.setters.splice(idx,1); onConfigChange(); renderConfigPanel(); };
+
+    row.appendChild(nameInput);
+    row.appendChild(daySel);
+    row.appendChild(timeInput);
+    row.appendChild(removeBtn);
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('add-setter').onclick = () => {
+  config.setters.push({ name: `Setter ${config.setters.length+1}`, day: 4, time: "16:00" });
+  onConfigChange();
+  renderConfigPanel();
+};
+
+function onConfigChange(){
+  saveConfig();
+  renderListView();
+  renderCalendarView();
+}
+
+/* ---------- List view ---------- */
+function renderListView(){
+  const container = document.getElementById('view-list');
+  container.innerHTML = "";
+  for(let i=0; i<N_WEEKS; i++){
+    const w = buildWeekData(i);
+    const card = document.createElement('div');
+    card.className = 'week-card' + (w.phase === 'cerradores' ? ' phase-cerradores' : '');
+
+    const badgeClass = w.phase === 'cerradores' ? 'phase-badge cerradores' : 'phase-badge';
+    const badgeText = w.phase === 'cerradores' ? 'Cerradores' : 'Setters';
+
+    let coachHtml = w.coaching.map(c => `
+      <div class="event">
+        <span class="dot" style="background:var(--accent)"></span>
+        <span class="ev-label">${escapeHtml(c.name)} — 1-1</span>
+        <span class="ev-time">${fmtDate(c.date)} · ${c.time}</span>
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="week-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="week-header">
+        <span class="week-range">${fmtRange(i)}</span>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="events">
+        <div class="event">
+          <span class="dot" style="background:var(--p-wbr)"></span>
+          <span class="ev-label">WBR — ${w.wbrParticipants}</span>
+          <span class="ev-time">${fmtDate(w.wbrDate)} · ${config.wbr.time}</span>
+        </div>
+        <div class="event">
+          <span class="dot" style="background:${w.phase === 'cerradores' ? 'var(--p-cerradores)' : 'var(--p-setters)'}"></span>
+          <span class="ev-label">${w.trainingLabel}</span>
+          <span class="ev-time">${fmtDate(w.trainingDate)} · ${config.training.time}</span>
+        </div>
+        <div class="coach-group">${coachHtml}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ---------- Calendar view ---------- */
+function renderCalendarView(){
+  const container = document.getElementById('view-cal');
+  container.innerHTML = "";
+
+  // build a flat event map: 'YYYY-MM-DD' -> [colors]
+  const eventMap = {};
+  function addEvent(date, color){
+    const key = date.toISOString().slice(0,10);
+    if(!eventMap[key]) eventMap[key] = [];
+    eventMap[key].push(color);
+  }
+  for(let i=0;i<N_WEEKS;i++){
+    const w = buildWeekData(i);
+    addEvent(w.wbrDate, 'var(--p-wbr)');
+    addEvent(w.trainingDate, w.phase === 'cerradores' ? 'var(--p-cerradores)' : 'var(--p-setters)');
+    w.coaching.forEach(c => addEvent(c.date, 'var(--accent)'));
+  }
+
+  const rangeStart = WEEK_START;
+  const rangeEnd = addDays(WEEK_START, N_WEEKS*7 - 1);
+
+  // months to render: Aug, Sep, Oct 2026 (covers 11 ago - 12 oct range)
+  const months = [
+    {year:2026, month:7},  // agosto
+    {year:2026, month:8},  // septiembre
+    {year:2026, month:9},  // octubre
+  ];
+
+  months.forEach(m=>{
+    const first = new Date(m.year, m.month, 1);
+    const last = new Date(m.year, m.month+1, 0);
+    const monthName = first.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
+
+    const monthDiv = document.createElement('div');
+    monthDiv.className = 'month';
+    const title = document.createElement('p');
+    title.className = 'month-title';
+    title.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    monthDiv.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'cal-grid';
+    DOW_SHORT.slice(1).concat(DOW_SHORT[0]).forEach(lbl=>{
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = lbl;
+      grid.appendChild(el);
+    });
+
+    // leading empty cells (week starts Monday)
+    let leadEmpty = (first.getDay() + 6) % 7;
+    for(let e=0; e<leadEmpty; e++){
+      const el = document.createElement('div');
+      el.className = 'cal-day empty';
+      grid.appendChild(el);
+    }
+
+    for(let day=1; day<=last.getDate(); day++){
+      const d = new Date(m.year, m.month, day);
+      const key = d.toISOString().slice(0,10);
+      const inRange = d >= rangeStart && d <= rangeEnd;
+      const cell = document.createElement('div');
+      cell.className = 'cal-day' + (inRange ? '' : ' out-of-range');
+      const pills = (eventMap[key]||[]).map(c=>`<span class="pill" style="background:${c}"></span>`).join('');
+      cell.innerHTML = `<div class="daynum">${day}</div><div class="pills">${pills}</div>`;
+      grid.appendChild(cell);
+    }
+
+    monthDiv.appendChild(grid);
+    container.appendChild(monthDiv);
+  });
+}
+
+/* ---------- View toggle ---------- */
+document.getElementById('btn-list').onclick = () => {
+  document.getElementById('view-list').style.display = '';
+  document.getElementById('view-cal').style.display = 'none';
+  document.getElementById('btn-list').classList.add('active');
+  document.getElementById('btn-cal').classList.remove('active');
+};
+document.getElementById('btn-cal').onclick = () => {
+  document.getElementById('view-list').style.display = 'none';
+  document.getElementById('view-cal').style.display = '';
+  document.getElementById('btn-cal').classList.add('active');
+  document.getElementById('btn-list').classList.remove('active');
+};
+
+document.getElementById('sync-refresh').onclick = async () => {
+  await loadConfig();
+  renderConfigPanel();
+  renderListView();
+  renderCalendarView();
+};
+
+/* ---------- Init ---------- */
+(async function init(){
+  await loadConfig();
+  renderConfigPanel();
+  renderListView();
+  renderCalendarView();
+})();
+</script>
+
+</body>
+</html>
